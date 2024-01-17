@@ -51,6 +51,9 @@ module PGA2D =
         static member create a =
             { e012 = a*1.0<e012> }
 
+        static member ( + ) (l, r) =
+            { e012 = l.e012 + r.e012 }
+
         override this.ToString () =
             $"PseudoScalar: {this.e012}e012"
 
