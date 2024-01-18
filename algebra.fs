@@ -50,10 +50,26 @@ module PGA2D =
               e1 = b * 1.0<e1>
               e2 = c * 1.0<e2> }
 
-        static member ( + ) (l, r) =
-            { e0 = l.e0 + r.e0
-              e1 = l.e1 + r.e1
-              e2 = l.e2 + r.e2 }
+        static member ( + ) (a, b) =
+            { e0 = a.e0 + b.e0
+              e1 = a.e1 + b.e1
+              e2 = a.e2 + b.e2 }
+        
+        static member ( * ) (a: Vec, s: float) =
+            { e0 = a.e0*s
+              e1 = a.e1*s
+              e2 = a.e2*s }
+
+        static member ( .^. ) (a: Vec, s: float) =
+            a * s
+
+        static member ( .^. ) (a: Vec, b: Vec) =
+            { e01 = a.e0*b.e1 - a.e1*b.e0
+              e02 = a.e0*b.e2 - a.e2*b.e0
+              e12 = a.e1*b.e2 - a.e2*b.e1 }
+        
+        static member ( .^. ) (a: Vec, B: Bivec) =
+            { e012 = a.e0*B.e12 - a.e1*B.e02 + a.e2*B.e01 }
 
         member this.list =
             [ !this.e0; !this.e1; !this.e2 ]
