@@ -10,7 +10,6 @@ open Microsoft.FSharp.Collections
 [<Measure>] type e12 = e1*e2
 [<Measure>] type e012 = e0*e1*e2
 
-
 module PGA2D =
     let basis = [ ""; "e0"; "e1"; "e2"; "e01"; "e02"; "e12"; "e012" ]
 
