@@ -1,6 +1,6 @@
 namespace FPGA
 
-open Microsoft.FSharp.Collections
+open System
 
 [<Measure>] type e0
 [<Measure>] type e1
@@ -16,20 +16,23 @@ module PGA2D =
     let ( ! ) (x: float<_>) =
         float x
 
-    let rec vecStr elems suffixes =
+    let vecStr elems suffixes =
         let plus = function
-            | _, [], s  -> s
-            | 0.0, _, _ -> ""
-            | _, _, s   -> s + " + "
-        let str = function
+            | 0.0, _ , _ -> ""
+            | _  , [], b -> b
+            | _  , _ , b -> $"{b} + "
+        let coeff = function
             | 0.0
             | 1.0  -> ""
             | -1.0 -> "-"
             | x    -> $"{x}"
-        match elems, suffixes with
-        | _, []
-        | [], _ -> ""
-        | x::xs, s::ss -> str x + plus (x, xs, s) + vecStr xs ss
+        let rec loop = function
+            | _, []
+            | [], _ -> ""
+            | x::xs, b::bs -> coeff x + plus (x, xs, b) + loop (xs, bs)
+        loop (elems, suffixes)
+        |> _.Replace("+ -", "- ")
+        |> (fun s -> if s = "" then "0" else s)
 
     type Blade = 
         | Zero  of float
@@ -51,6 +54,12 @@ module PGA2D =
               e2 = c * 1.0<e2> }
 
         member this.list = [ !this.e0; !this.e1; !this.e2 ]
+
+        member this.Item = function
+            | 0 -> !this.e0
+            | 1 -> !this.e1
+            | 2 -> !this.e2
+            | _ -> raise (IndexOutOfRangeException ())
 
         override this.ToString () =
             vecStr this.list (basis |> List.skip 1 |> List.take 3)
@@ -89,6 +98,12 @@ module PGA2D =
               e12 = c*1.0<e12> }
 
         member this.list = [ !this.e01; !this.e02; !this.e12 ]
+
+        member this.Item = function
+            | 0 -> !this.e01
+            | 1 -> !this.e02
+            | 2 -> !this.e12
+            | _ -> raise (IndexOutOfRangeException ())
 
         override this.ToString () =
             vecStr this.list (basis |> List.skip 4 |> List.take 3)
