@@ -11,6 +11,12 @@ let testVecs =
     let d = vec -1 0 -1
     let e = vec -1 -2 -3
 
+    let A = bivec 1 2 3
+    let B = bivec 4 5 6
+    let C = bivec 0 1 0
+    let D = bivec -1 0 -1
+    let E = bivec -1 -2 -3
+
     let test name case expect str =
         testCase name <| fun () ->
             Expect.equal case expect str
@@ -25,26 +31,17 @@ let testVecs =
             test $"e* = ({e})*" !*e (bivec -3 2 -1) "-3e01 + 2e02 - e12"
         ]
         testList "Outer Product" [
-            testCase $"a∧b = ({a})∧({b})" <| fun () ->
-                let case   = a .^. b
-                let expect = bivec -3 -6 -3
-                Expect.equal case expect ""
-                Expect.equal $"{case}" "-3e01 - 6e02 - 3e12" ""
-            testCase $"a∧c = ({a})∧({c})" <| fun () ->
-                let case   = a .^. c
-                let expect = bivec 1 0 -3
-                Expect.equal case expect ""
-                Expect.equal $"{case}" "e01 - 3e12" ""
-            testCase $"a∧d = ({a})∧({d})" <| fun () ->
-                let case   = a .^. d
-                let expect = bivec 2 2 -2
-                Expect.equal case expect ""
-                Expect.equal $"{case}" "2e01 + 2e02 - 2e12" ""
-            testCase $"a∧e = ({a})∧({e})" <| fun () ->
-                let case   = a .^. e
-                let expect = bivec 0 0 0
-                Expect.equal case expect ""
-                Expect.equal $"{case}" "0" ""
+            test $"a∧b = ({a})∧({b})" (a .^. b) (bivec -3 -6 -3) "-3e01 - 6e02 - 3e12"
+            test $"a∧c = ({a})∧({c})" (a .^. c) (bivec  1  0 -3) "e01 - 3e12"
+            test $"a∧d = ({a})∧({d})" (a .^. d) (bivec  2  2 -2) "2e01 + 2e02 - 2e12"
+            test $"a∧e = ({a})∧({e})" (a .^. e) (bivec  0  0  0) "0"
+        ]
+        testList "Regressive Product" [
+            test $"A∨B = ({A}) ∨ ({A})" (A .&. A) (vec  0  0 0) "0"
+            test $"A∨B = ({A}) ∨ ({B})" (A .&. B) (vec  3  6 3) "3e0 + 6e1 + 3e2"
+            test $"A∨C = ({A}) ∨ ({C})" (A .&. C) (vec -1  0 3) "-e0 + 3e2"
+            test $"A∨D = ({A}) ∨ ({D})" (A .&. D) (vec -2 -2 2) "-2e0 - 2e1 + 2e2"
+            test $"A∨E = ({A}) ∨ ({E})" (A .&. E) (vec  0  0 0) "0"
         ]
     ]
 

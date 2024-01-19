@@ -41,6 +41,7 @@ module PGA2D =
         | Two   of Bivec
         | Three of PSS
 
+
     and Vec =
         { e0: float<e0>
           e1: float<e1>
@@ -65,13 +66,18 @@ module PGA2D =
         override this.ToString () =
             vecStr this.list (basis |> List.skip 1 |> List.take 3)
 
-        static member ( !* ) (a: Vec) = // Poincare Dual
+        // Poincare Dual -> *
+        // A^* = A ⌋ I^-1
+        static member ( !* ) (a: Vec) =
             { e01 =  a.e2 * 1.0<e01/e2>
               e02 = -a.e1 * 1.0<e02/e1>
               e12 =  a.e0 * 1.0<e12/e0> }
-        static member ( !** ) (a: Vec) = !*a // Hodge dual
 
-        static member ( ~~ ) (a: Vec) = !*(!*a) // Inverse
+        // Hodge dual -> ★
+        static member ( !** ) (a: Vec) = !*a
+
+        // Inverse -> -*
+        static member ( ~~ ) (a: Vec) = !*(!*a)
 
         static member ( + ) (a: Vec, b: Vec) =
             { e0 = a.e0 + b.e0
@@ -84,6 +90,8 @@ module PGA2D =
               e2 = a.e2 * s }
         static member ( * ) (s: float, a: Vec) = a * s
 
+        // Outer Product / Meet
+        // a ∧ b = (a0b1 - a1b0)e01 + (a0b2 - a2b0)e02 + (a1b2 - a2b1)e12
         static member ( .^. ) (a: Vec, s: float) = s * a
         static member ( .^. ) (s: float, a: Vec) = s * a
         static member ( .^. ) (a: Vec, b: Vec) =
@@ -92,9 +100,11 @@ module PGA2D =
               e12 = a.e1*b.e2 - a.e2*b.e1 }
         static member ( .^. ) (a: Vec, B: Bivec) =
             { e012 = a.e0*B.e12 - a.e1*B.e02 + a.e2*B.e01 }
-        
-        static member op_Amp (a: Vec, b: Vec) =
-            ()
+
+        // Regressive Product / Join
+        // a ∨ b = ★^-1(★a ∧ ★b)
+        static member op_Amp (a: Vec, b: Bivec): float =
+            !**((!**a) .^. (!**b))
 
     and Bivec =
         { e01: float<e01>
@@ -120,13 +130,12 @@ module PGA2D =
         override this.ToString () =
             vecStr this.list (basis |> List.skip 4 |> List.take 3)
 
-        static member ( !* ) (a: Bivec): Vec = // Poincare Dual
+        static member ( !* ) (a: Bivec): Vec = // Poincare Dual -> *
             { e0 = a.e12 * 1.0<e0/e12>
               e1 = a.e02 * 1.0<e1/e02>
               e2 = a.e01 * 1.0<e2/e01> }
-        static member ( !** ) (a: Vec) = !*a // Hodge dual
-
-        static member ( ~~ ) (a: Vec) = !*(!*a) // Inverse
+        static member ( !** ) (a: Bivec) = !*a // Hodge dual -> ★
+        static member ( ~~ ) (a: Bivec) = !*(!*a) // Inverse -> -*
 
         static member ( + ) (A: Bivec, B: Bivec) =
             { e01 = A.e01 + B.e01
@@ -141,6 +150,9 @@ module PGA2D =
 
         static member ( .^. ) (B: Bivec, a: Vec) = a .^. B
 
+        static member ( .&. ) (A: Bivec, B: Bivec) =
+            !**((!**A) .^. (!**B))
+
     and PSS =
         { e012: float<e012> }
         static member Default =
@@ -154,12 +166,19 @@ module PGA2D =
         override this.ToString () =
             vecStr this.list (basis |> List.skip 7 |> List.take 1)
 
-        static member ( + ) (I1, I2) =
+        static member ( !* ) (I: PSS) = !<>I.e012
+
+        static member ( !** ) (I: PSS) = !*I
+
+        static member ( + ) (I1: PSS, I2: PSS) =
             { e012 = I1.e012 + I2.e012 }
 
         static member ( * ) (I: PSS, s: float) =
             { e012 = I.e012 * s }
         static member ( * ) (s: float, I: PSS) = I * s
+
+        static member op_Amp (I1: PSS, I2: PSS) =
+            { e012 = I1.e012 * I2.e012 / 1.0<e012> }
 
     and MultiVec =
         { scalar: float
