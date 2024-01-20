@@ -11,7 +11,7 @@ open System
 [<Measure>] type e012 = e0*e1*e2
 
 module PGA2D =
-    let basis = [ ""; "e0"; "e1"; "e2"; "e01"; "e02"; "e12"; "e012" ]
+    let basis = [ ""; "e1"; "e2"; "e0"; "e01"; "e02"; "e12"; "e012" ]
 
     let ( !<> ) (x: float<_>) =
         float x
@@ -38,11 +38,17 @@ module PGA2D =
     type Point =
         { x: float
           y: float }
+        static member Default =
+            { x = 0.0
+              y = 0.0 }
         static member create x y =
             { x = x
               y = y }
         
         member this.tuple = this.x, this.y
+
+        override this.ToString () =
+            $"{this.x}, {this.y}"
 
         static member ( + ) (p1, p2) =
             { x = p1.x + p2.x
@@ -67,33 +73,45 @@ module PGA2D =
         | Three of PSS
 
     and Vec =
-        { e0: float<e0>
-          e1: float<e1>
-          e2: float<e2> }
+        { e1: float<e1>
+          e2: float<e2>
+          e0: float<e0> }
         static member Default =
-            { e0 = 0.0<e0>
-              e1 = 0.0<e1>
-              e2 = 0.0<e2> }
+            { e1 = 0.0<e1>
+              e2 = 0.0<e2>
+              e0 = 0.0<e0> }
         static member create a b c =
-            { e0 = a * 1.0<e0>
-              e1 = b * 1.0<e1>
-              e2 = c * 1.0<e2> }
+            { e1 = a * 1.0<e1>
+              e2 = b * 1.0<e2>
+              e0 = c * 1.0<e0> }
 
-        member this.list  = [ !<>this.e0; !<>this.e1; !<>this.e2 ]
-        member this.tuple = !<>this.e0, !<>this.e1, !<>this.e2
+        member this.list  = [ !<>this.e1; !<>this.e2; !<>this.e0 ]
+        member this.tuple = !<>this.e1, !<>this.e2, !<>this.e0
         member this.mag =
-            let x, y, z = this.tuple
-            sqrt (x**2 + y**2 + z**2)
+            let w, x, y = this.tuple
+            sqrt (x**2 + y**2 + w**2)
         member this.normalized =
-            { e0 = this.e0 / this.mag
-              e1 = this.e1 / this.mag
-              e2 = this.e2 / this.mag }
+            { e1 = this.e1 / this.mag
+              e2 = this.e2 / this.mag
+              e0 = this.e0 / this.mag }
 
         member this.Item = function
-            | 0 -> !<>this.e0
-            | 1 -> !<>this.e1
-            | 2 -> !<>this.e2
+            | 0 -> !<>this.e1
+            | 1 -> !<>this.e2
+            | 2 -> !<>this.e0
             | _ -> raise (IndexOutOfRangeException ())
+
+        // l = ae1 + be2 + ce0
+        // 0 = ax + by + c
+        // y = -(a/b)x - c/b = -(e1/e2)x - e0/e2
+        member this.points (?midX: float) =
+            let a, b, c = this.tuple
+            let a, b = (b, -a)
+            let x  = match midX with None -> this.mag/2.0 | Some x -> x + this.mag/2.0
+            let m  = -(a/b)
+            let yi = -(c/b)
+            Point.create  x ( m*x + yi),
+            Point.create -x (-m*x + yi)
 
         override this.ToString () =
             vecStr this.list (basis |> List.skip 1 |> List.take 3)
@@ -112,20 +130,20 @@ module PGA2D =
         static member ( ~~ ) (a: Vec) = !*(!*a)
 
         static member ( + ) (a: Vec, b: Vec) =
-            { e0 = a.e0 + b.e0
-              e1 = a.e1 + b.e1
-              e2 = a.e2 + b.e2 }
+            { e1 = a.e1 + b.e1
+              e2 = a.e2 + b.e2
+              e0 = a.e0 + b.e0 }
         
         static member ( * ) (a: Vec, s: float) =
-            { e0 = a.e0 * s
-              e1 = a.e1 * s
-              e2 = a.e2 * s }
+            { e1 = a.e1 * s
+              e2 = a.e2 * s
+              e0 = a.e0 * s }
         static member ( * ) (s: float, a: Vec) = a * s
 
         static member ( / ) (a: Vec, s: float) =
-            { e0 = a.e0 / s
-              e1 = a.e1 / s
-              e2 = a.e2 / s }
+            { e1 = a.e1 / s
+              e2 = a.e2 / s
+              e0 = a.e0 / s }
 
         // Outer Product / Meet
         // a ∧ b = (a0b1 - a1b0)e01 + (a0b2 - a2b0)e02 + (a1b2 - a2b1)e12
@@ -142,15 +160,6 @@ module PGA2D =
         // a ∨ b = ★-1(★a ∧ ★b)
         static member op_Amp (a: Vec, b: Bivec): float =
             !**((!**a) .^. (!**b))
-
-        // l = ae1 + be2 + ce0
-        // 0 = ax + by + c
-        // y = -(a/b)x - c/b  |  x = -(b/a)y - c/a
-        member this.points mid =
-            let c, a, b = this.tuple
-            assert (a*mid.x + b*mid.y + c = 0.0)
-            Point.create (mid.x + a/2.0) (mid.y + b/2.0),
-            Point.create (mid.x - a/2.0) (mid.y - b/2.0)
 
     and Bivec =
         { e01: float<e01>
@@ -179,9 +188,9 @@ module PGA2D =
             vecStr this.list (basis |> List.skip 4 |> List.take 3)
 
         static member ( !* ) (a: Bivec): Vec = // Poincare Dual -> *
-            { e0 = a.e12 * 1.0<e0/e12>
-              e1 = a.e02 * 1.0<e1/e02>
-              e2 = a.e01 * 1.0<e2/e01> }
+            { e1 = a.e02 * 1.0<e1/e02>
+              e2 = a.e01 * 1.0<e2/e01>
+              e0 = a.e12 * 1.0<e0/e12> }
         static member ( !** ) (a: Bivec) = !*a // Hodge dual -> ★
         static member ( ~~ ) (a: Bivec) = !*(!*a) // Inverse -> -*
 

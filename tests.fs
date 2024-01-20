@@ -5,11 +5,11 @@ open FPGA.PGA2D
 // https://bivector.net/tools.html?p=2&q=0&r=1
 [<Tests>]
 let testVecs =
-    let a = vec 1 2 3
-    let b = vec 4 5 6
-    let c = vec 0 1 0
-    let d = vec -1 0 -1
-    let e = vec -1 -2 -3
+    let a = vec  2  3  1
+    let b = vec  5  6  4
+    let c = vec  1  0  0
+    let d = vec  0 -1 -1
+    let e = vec -2 -3 -1
 
     let A = bivec 1 2 3
     let B = bivec 4 5 6
@@ -37,11 +37,11 @@ let testVecs =
             test $"a∧e = ({a})∧({e})" (a .^. e) (bivec  0  0  0) "0"
         ]
         testList "Regressive Product" [
-            test $"A∨B = ({A}) ∨ ({A})" (A .&. A) (vec  0  0 0) "0"
-            test $"A∨B = ({A}) ∨ ({B})" (A .&. B) (vec  3  6 3) "3e0 + 6e1 + 3e2"
-            test $"A∨C = ({A}) ∨ ({C})" (A .&. C) (vec -1  0 3) "-e0 + 3e2"
-            test $"A∨D = ({A}) ∨ ({D})" (A .&. D) (vec -2 -2 2) "-2e0 - 2e1 + 2e2"
-            test $"A∨E = ({A}) ∨ ({E})" (A .&. E) (vec  0  0 0) "0"
+            test $"A∨B = ({A}) ∨ ({A})" (A .&. A) (vec  0 0  0) "0"
+            test $"A∨B = ({A}) ∨ ({B})" (A .&. B) (vec  6 3  3) "6e1 + 3e2 + 3e0"
+            test $"A∨C = ({A}) ∨ ({C})" (A .&. C) (vec  0 3 -1) "3e2 - e0"
+            test $"A∨D = ({A}) ∨ ({D})" (A .&. D) (vec -2 2 -2) "-2e1 + 2e2 - 2e0"
+            test $"A∨E = ({A}) ∨ ({E})" (A .&. E) (vec  0 0  0) "0"
         ]
     ]
 
