@@ -35,12 +35,36 @@ module PGA2D =
         |> _.TrimEnd([|' '; '+'|])
         |> (fun s -> if s = "" then "0" else s)
 
+    type Point =
+        { x: float
+          y: float }
+        static member create x y =
+            { x = x
+              y = y }
+        
+        member this.tuple = this.x, this.y
+
+        static member ( + ) (p1, p2) =
+            { x = p1.x + p2.x
+              y = p1.y + p2.y }
+
+        static member ( - ) (p1, p2) =
+            { x = p1.x - p2.x
+              y = p1.y - p2.y }
+
+        static member ( * ) (p, s) =
+            { x = p.x * s
+              y = p.y * s }
+
+        static member ( / ) (p, s) =
+            { x = p.x / s
+              y = p.y / s }
+
     type Blade = 
         | Zero  of float
         | One   of Vec
         | Two   of Bivec
         | Three of PSS
-
 
     and Vec =
         { e0: float<e0>
@@ -55,7 +79,15 @@ module PGA2D =
               e1 = b * 1.0<e1>
               e2 = c * 1.0<e2> }
 
-        member this.list = [ !<>this.e0; !<>this.e1; !<>this.e2 ]
+        member this.list  = [ !<>this.e0; !<>this.e1; !<>this.e2 ]
+        member this.tuple = !<>this.e0, !<>this.e1, !<>this.e2
+        member this.mag =
+            let x, y, z = this.tuple
+            sqrt (x**2 + y**2 + z**2)
+        member this.normalized =
+            { e0 = this.e0 / this.mag
+              e1 = this.e1 / this.mag
+              e2 = this.e2 / this.mag }
 
         member this.Item = function
             | 0 -> !<>this.e0
@@ -67,7 +99,7 @@ module PGA2D =
             vecStr this.list (basis |> List.skip 1 |> List.take 3)
 
         // Poincare Dual -> *
-        // A^* = A ⌋ I^-1
+        // A* = A ⌋ I^-1
         static member ( !* ) (a: Vec) =
             { e01 =  a.e2 * 1.0<e01/e2>
               e02 = -a.e1 * 1.0<e02/e1>
@@ -90,6 +122,11 @@ module PGA2D =
               e2 = a.e2 * s }
         static member ( * ) (s: float, a: Vec) = a * s
 
+        static member ( / ) (a: Vec, s: float) =
+            { e0 = a.e0 / s
+              e1 = a.e1 / s
+              e2 = a.e2 / s }
+
         // Outer Product / Meet
         // a ∧ b = (a0b1 - a1b0)e01 + (a0b2 - a2b0)e02 + (a1b2 - a2b1)e12
         static member ( .^. ) (a: Vec, s: float) = s * a
@@ -102,9 +139,18 @@ module PGA2D =
             { e012 = a.e0*B.e12 - a.e1*B.e02 + a.e2*B.e01 }
 
         // Regressive Product / Join
-        // a ∨ b = ★^-1(★a ∧ ★b)
+        // a ∨ b = ★-1(★a ∧ ★b)
         static member op_Amp (a: Vec, b: Bivec): float =
             !**((!**a) .^. (!**b))
+
+        // l = ae1 + be2 + ce0
+        // 0 = ax + by + c
+        // y = -(a/b)x - c/b  |  x = -(b/a)y - c/a
+        member this.points mid =
+            let c, a, b = this.tuple
+            assert (a*mid.x + b*mid.y + c = 0.0)
+            Point.create (mid.x + a/2.0) (mid.y + b/2.0),
+            Point.create (mid.x - a/2.0) (mid.y - b/2.0)
 
     and Bivec =
         { e01: float<e01>
@@ -115,11 +161,13 @@ module PGA2D =
               e02 = 0.0<e02>
               e12 = 0.0<e12> }
         static member create a b c =
-            { e01 = a*1.0<e01>
-              e02 = b*1.0<e02>
-              e12 = c*1.0<e12> }
+            { e01 = a * 1.0<e01>
+              e02 = b * 1.0<e02>
+              e12 = c * 1.0<e12> }
 
-        member this.list = [ !<>this.e01; !<>this.e02; !<>this.e12 ]
+        member this.list  = [ !<>this.e01; !<>this.e02; !<>this.e12 ]
+        member this.tuple = !<>this.e01, !<>this.e02, !<>this.e12
+        member this.point = Point.create !<>(this.e01 / this.e12) !<>(this.e02 / this.e12)
 
         member this.Item = function
             | 0 -> !<>this.e01
@@ -202,7 +250,13 @@ module PGA2D =
         override this.ToString () =
             vecStr this.list basis
 
-    let vec   = Vec.create
-    let bivec = Bivec.create
-    let pss   = PSS.create
-    let mvec  = MultiVec.create
+    [<AutoOpen>]
+    type Helpers =
+        static member vec   = Vec.create
+        static member bivec = Bivec.create
+        static member pss   = PSS.create
+        static member mvec  = MultiVec.create
+        static member point = Point.create
+
+        static member midpoint (A: Bivec) (B: Bivec) =
+            (A.point + B.point) / 2.0
