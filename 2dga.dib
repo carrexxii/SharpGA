@@ -1,13 +1,29 @@
 #!meta
 
-{"kernelInfo":{"defaultKernelName":"fsharp","items":[{"aliases":[],"languageName":"fsharp","name":"fsharp"}]}}
+{"kernelInfo":{"defaultKernelName":"csharp","items":[{"aliases":[],"name":"csharp"},{"aliases":[],"languageName":"fsharp","name":"fsharp"}]}}
 
 #!fsharp
 
+#r "nuget: SharpVG"
 #load "algebra.fs"
+
+open SharpVG
 
 open FPGA
 open FPGA.R200
+
+let showSvg svg =
+    Svg.toString svg
+    |> HTML
+    |> display
+
+let style = Style.create (Color.ofName Colors.Cyan) (Color.ofName Colors.Red) (Length.ofInt 3) 1.0 1.0
+let line p q =
+    Line.create p q
+    |> Element.createWithStyle style
+    |> Element.withClass "marker"
+    |> Svg.ofElement
+    |> showSvg
 
 #!markdown
 
@@ -15,11 +31,42 @@ Calculating the dual for 2D GA:
 $$
 \def \e{\mathbf{e}}
 \begin{align*}
-    a^* &= (x\e_1 + y\e_2)^*           \\
-        &= (x\e_1 + y\e_2)\mathbf{I}   \\
-        &= (x\e_1 + y\e_2)\e_{12}      \\
-        &= x\e_1\e_{12} + y\e_2\e_{12} \\
-        &= x\e_{112} + y\e_{212}       \\
-        &= x\e_2 - y\e_1               \\
+    a^* &= (a_1\e_1 + a_2\e_2)^*           \\
+        &= (a_1\e_1 + a_2\e_2)\mathbf{I}   \\
+        &= (a_1\e_1 + a_2\e_2)\e_{12}      \\
+        &= a_1\e_1\e_{12} + a_2\e_2\e_{12} \\
+        &= a_1\e_{112} + a_2\e_{212}       \\
+        &= a_1\e_2 - a_2\e_1               \\
 \end{align*}
 $$
+
+$$
+\def \e{\mathbf{e}}
+\begin{align*}
+    A^* &= (\e_{12})^*    \\
+        &= \e_{12}\e_{12} \\
+        &= \e_{1212}      \\
+        &= -1             \\
+\end{align*}
+$$
+
+#!markdown
+
+Calculating the outer product for 2D GA: ($a \wedge b = \langle ab \rangle _{s + t}$)
+$$
+\def \e{\mathbf{e}}
+\begin{align*}
+    a \wedge b &= (a_1\e_1 + a_2\e_2) \wedge (b_1\e_1 + b_2\e_2) \\
+               &= a_1b_1\e_1\e_1 + a_1b_2\e_1\e_2 + a_2b_1\e_2\e_1 + a_2b_2\e_2\e_2 \\
+               &= a_1b_1\e_{11} + a_1b_2\e_{12} + a_2b_1\e_{21} + a_2b_2\e_{22} \\
+               &= a_1b_1 + a_1b_2\e_{12} + a_2b_1\e_{21} + a_2b_2 \\
+               &= a_1b_1 + a_1b_2\e_{12} - a_2b_1\e_{12} + a_2b_2 \\
+               &= a_1b_1 + a_2b_2 + (a_1b_2 - a_2b_1)\e_{12} \\
+               &= (a_1b_2 - a_2b_1)\e_{12} \\
+\end{align*}
+$$
+
+#!fsharp
+
+line (Point.ofInts (0, 0)) (Point.ofInts (150, 100))
+line (Point.ofInts (0, 0)) (Point.ofInts (150, 500))

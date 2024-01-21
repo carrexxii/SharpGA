@@ -18,6 +18,12 @@ module TestR200 =
         let d = vec  3 -7
         let e = vec -2 10
 
+        let A = bivec  0
+        let B = bivec  1
+        let C = bivec -1
+        let D = bivec  3
+        let E = bivec -7
+
         testList "Vector tests" [
             testList "Dual" [
                 test $"a* = ({a})*" !*a (vec   0  0) "0"
@@ -25,6 +31,27 @@ module TestR200 =
                 test $"c* = ({c})*" !*c (vec   1 -1) "e1 - e2"
                 test $"d* = ({d})*" !*d (vec   7  3) "7e1 + 3e2"
                 test $"e* = ({e})*" !*e (vec -10 -2) "-10e1 - 2e2"
+            ]
+            testList "Inner Product" [
+                test $"e⋅a = ({e})⋅({a})" (e .|. a)   0.0 "0"
+                test $"e⋅b = ({e})⋅({b})" (e .|. b)   8.0 "8"
+                test $"e⋅c = ({e})⋅({c})" (e .|. c)  -8.0 "-8"
+                test $"e⋅d = ({e})⋅({d})" (e .|. d) -76.0 "-76"
+                test $"e⋅e = ({e})⋅({e})" (e .|. e) 104.0 "104"
+            ]
+            testList "Outer Product" [
+                test $"e∧a = ({e})∧({a})" (e .^. a) (bivec   0) "0"
+                test $"e∧b = ({e})∧({b})" (e .^. b) (bivec -12) "-12e12"
+                test $"e∧c = ({e})∧({c})" (e .^. c) (bivec  12) "12e12"
+                test $"e∧d = ({e})∧({d})" (e .^. d) (bivec -16) "-16e12"
+                test $"e∧e = ({e})∧({e})" (e .^. e) (bivec   0) "0"
+            ]
+            testList "MultiVec" [
+                test $"a + A"     (      a + A) (multivec 0  0  0  0) "0"
+                test $"3 + a + B" (3.0 + a + B) (multivec 3  0  0  1) "3 + e12"
+                test $"c + C"     (      c + C) (multivec 0 -1 -1 -1) "-e1 - e2 - e12"
+                test $"1 + E + d" (1.0 + E + d) (multivec 1  3 -7 -7) "1 + 3e1 - 7e2 - 7e12"
+                test $"B + e"     (      B + e) (multivec 0 -2 10  1) "-2e1 + 10e2 + e12"
             ]
         ]
 

@@ -10,18 +10,21 @@ module Algebra =
             | _  , [], b -> b
             | _  , _ , b -> $"{b} + "
         let coeff = function
-            | 0.0
-            | 1.0  -> ""
-            | -1.0 -> "-"
-            | x    -> $"{x}"
+            | 1.0, "" -> "1"
+            | 0.0, _
+            | 1.0, _  -> ""
+            | -1.0, _ -> "-"
+            | x, _    -> $"{x}"
         let rec loop = function
             | _, []
             | [], _ -> ""
-            | x::xs, b::bs -> coeff x + plus (x, xs, b) + loop (xs, bs)
+            | x::xs, b::bs -> coeff (x, b) + plus (x, xs, b) + loop (xs, bs)
         loop (elems, suffixes)
         |> _.Replace("+ -", "- ")
         |> _.TrimEnd([|' '; '+'|])
         |> (fun s -> if s = "" then "0" else s)
+
+///////////////////////////////////////////////////////////////////////////////
 
 module R200 =
     let basis = [ ""; "e1"; "e2"; "e12" ]
@@ -52,17 +55,90 @@ module R200 =
             { e1 = -a.e2
               e2 =  a.e1 }
 
+        static member ( + ) (a: Vec, s: float) =
+            MultiVec.create s a.e1 a.e2 0.0
+        static member ( + ) (s: float, a: Vec) =
+            MultiVec.create s a.e1 a.e2 0.0
+        static member ( + ) (a: Vec, b: Vec) =
+            { e1 = a.e1 + b.e1
+              e2 = a.e2 + b.e2 }
+        static member ( + ) (a: Vec, B: Bivec) =
+            MultiVec.create 0.0 a.e1 a.e2 B.e12
+
+        // a⋅b = a1b1 + a2b2
+        static member ( .|. ) (a: Vec, b: Vec) =
+            a.e1*b.e1 + a.e2*b.e2
+
+        // a∧b = (a1b2 - a2b1)e12
+        static member ( .^. ) (a: Vec, b: Vec) =
+            { e12 = a.e1*b.e2 - a.e2*b.e1 }
+
+        static member ( * ) (a: Vec, b: Vec) =
+            (a .|. b) + (a .^. b)
+
+        // a∨b = (a* ∧ b*)*
+        static member ( .&. ) (a: Vec, b: Vec) =
+            !*(!*a .^. !*b)
+
     and Bivec =
         { e12: float }
         static member Default =
             { e12 = 0.0 }
         static member create e12 =
             { e12 = e12 }
-    
+        
+        override this.ToString () =
+            vecStr [ this.e12 ] (basis |> List.skip 3 |> List.take 1)
+
+        // A* = AI
+        static member ( !* ) (A: Bivec): float =
+            -1.0
+
+        static member ( + ) (A: Bivec, s: float): MultiVec =
+            MultiVec.create s 0.0 0.0 A.e12
+        static member ( + ) (s: float, A: Bivec): MultiVec =
+            MultiVec.create s 0.0 0.0 A.e12
+        static member ( + ) (B: Bivec, a: Vec) =
+            MultiVec.create 0.0 a.e1 a.e2 B.e12
+        static member ( + ) (A: Bivec, V: MultiVec) =
+            { V with e12 = V.e12 + A.e12 }
+
+    and MultiVec =
+        { s  : float
+          e1 : float
+          e2 : float
+          e12: float }
+        static member Default =
+            { s   = 0.0
+              e1  = 0.0
+              e2  = 0.0
+              e12 = 0.0 }
+        static member create s e1 e2 e12 =
+            { s   = s
+              e1  = e1
+              e2  = e2
+              e12 = e12 }
+        
+        member this.list = [ this.s; this.e1; this.e2; this.e12 ]
+
+        override this.ToString () =
+            vecStr this.list basis
+
+        static member ( + ) (V: MultiVec, a: Vec) =
+            { V with e1 = V.e1 + a.e1
+                     e2 = V.e2 + a.e2 }
+        static member ( + ) (V: MultiVec, A: Bivec) =
+            { V with e12 = V.e12 + A.e12 }
+        static member ( + ) (V: MultiVec, U: MultiVec) =
+            MultiVec.create (V.s + U.s) (V.e1 + U.e1) (V.e2 + U.e2) (V.e12 + U.e12)
+
     [<AutoOpen>]
     module Helpers =
-        let vec   = Vec.create
-        let bivec = Bivec.create
+        let vec      = Vec.create
+        let bivec    = Bivec.create
+        let multivec = MultiVec.create
+
+///////////////////////////////////////////////////////////////////////////////
 
 [<Measure>] type e0
 [<Measure>] type e1
