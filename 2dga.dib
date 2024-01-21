@@ -1,0 +1,25 @@
+#!meta
+
+{"kernelInfo":{"defaultKernelName":"fsharp","items":[{"aliases":[],"languageName":"fsharp","name":"fsharp"}]}}
+
+#!fsharp
+
+#load "algebra.fs"
+
+open FPGA
+open FPGA.R200
+
+#!markdown
+
+Calculating the dual for 2D GA:
+$$
+\def \e{\mathbf{e}}
+\begin{align*}
+    a^* &= (x\e_1 + y\e_2)^*           \\
+        &= (x\e_1 + y\e_2)\mathbf{I}   \\
+        &= (x\e_1 + y\e_2)\e_{12}      \\
+        &= x\e_1\e_{12} + y\e_2\e_{12} \\
+        &= x\e_{112} + y\e_{212}       \\
+        &= x\e_2 - y\e_1               \\
+\end{align*}
+$$

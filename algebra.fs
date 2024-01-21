@@ -2,20 +2,8 @@ namespace FPGA
 
 open System
 
-[<Measure>] type e0
-[<Measure>] type e1
-[<Measure>] type e2
-[<Measure>] type e01 = e0*e1
-[<Measure>] type e02 = e0*e2
-[<Measure>] type e12 = e1*e2
-[<Measure>] type e012 = e0*e1*e2
-
-module PGA2D =
-    let basis = [ ""; "e1"; "e2"; "e0"; "e01"; "e02"; "e12"; "e012" ]
-
-    let ( !<> ) (x: float<_>) =
-        float x
-
+[<AutoOpen>]
+module Algebra =
     let vecStr elems suffixes =
         let plus = function
             | 0.0, _ , _ -> ""
@@ -34,6 +22,61 @@ module PGA2D =
         |> _.Replace("+ -", "- ")
         |> _.TrimEnd([|' '; '+'|])
         |> (fun s -> if s = "" then "0" else s)
+
+module R200 =
+    let basis = [ ""; "e1"; "e2"; "e12" ]
+
+    [<RequireQualifiedAccess>]
+    type Blades =
+        | Zero of float
+        | One  of Vec
+        | Two  of Bivec
+
+    and Vec =
+        { e1: float
+          e2: float }
+        static member Default =
+            { e1 = 0.0
+              e2 = 0.0 }
+        static member create e1 e2 =
+            { e1 = e1
+              e2 = e2 }
+
+        member this.list = [ this.e1; this.e2 ]
+
+        override this.ToString () =
+            vecStr this.list (basis |> List.skip 1 |> List.take 2)
+
+        // a* = aI
+        static member ( !* ) a =
+            { e1 = -a.e2
+              e2 =  a.e1 }
+
+    and Bivec =
+        { e12: float }
+        static member Default =
+            { e12 = 0.0 }
+        static member create e12 =
+            { e12 = e12 }
+    
+    [<AutoOpen>]
+    module Helpers =
+        let vec   = Vec.create
+        let bivec = Bivec.create
+
+[<Measure>] type e0
+[<Measure>] type e1
+[<Measure>] type e2
+[<Measure>] type e01 = e0*e1
+[<Measure>] type e02 = e0*e2
+[<Measure>] type e12 = e1*e2
+[<Measure>] type e012 = e0*e1*e2
+
+module R201 =
+    let basis = [ ""; "e1"; "e2"; "e0"; "e01"; "e02"; "e12"; "e012" ]
+
+    let ( !<> ) (x: float<_>) =
+        float x
 
     type Point =
         { x: float
@@ -88,7 +131,7 @@ module PGA2D =
         member this.list  = [ !<>this.e1; !<>this.e2; !<>this.e0 ]
         member this.tuple = !<>this.e1, !<>this.e2, !<>this.e0
         member this.mag =
-            let w, x, y = this.tuple
+            let x, y, w = this.tuple
             sqrt (x**2 + y**2 + w**2)
         member this.normalized =
             { e1 = this.e1 / this.mag
@@ -107,11 +150,16 @@ module PGA2D =
         member this.points (?midX: float) =
             let a, b, c = this.tuple
             let a, b = (b, -a)
-            let x  = match midX with None -> this.mag/2.0 | Some x -> x + this.mag/2.0
+            let x  = match midX with None -> this.mag | Some x -> x + this.mag
             let m  = -(a/b)
             let yi = -(c/b)
-            Point.create  x ( m*x + yi),
-            Point.create -x (-m*x + yi)
+            if x = 0.0 then
+                printfn $"{this}"
+                Point.create  x  10.0,
+                Point.create -x -10.0
+            else
+                Point.create  x ( m*x + yi),
+                Point.create -x (-m*x + yi)
 
         override this.ToString () =
             vecStr this.list (basis |> List.skip 1 |> List.take 3)
