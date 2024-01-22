@@ -70,3 +70,19 @@ $$
 
 line (Point.ofInts (0, 0)) (Point.ofInts (150, 100))
 line (Point.ofInts (0, 0)) (Point.ofInts (150, 500))
+
+#!fsharp
+
+#load "algebra.fs"
+open FGA.T
+
+let R200 = R(2, 0, 0)
+let R201 = R(2, 0, 1)
+let R300 = R(3, 0, 0)
+let R301 = R(3, 0, 1)
+printfn $"{R200}\n{R201}\n{R300}\n{R301}"
+
+let e1 = Positive 1
+let e2 = Positive 2
+let e12 = e1 * e2
+printfn $"{e1}, {e2}, {e12}"

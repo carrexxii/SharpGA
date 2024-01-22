@@ -1,6 +1,6 @@
 open Expecto
 
-open FPGA
+open FGA
 
 let test name case expect str =
     testCase name <| fun () ->

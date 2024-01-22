@@ -1,4 +1,4 @@
-namespace FPGA
+namespace FGA
 
 open System
 
@@ -393,3 +393,55 @@ module R201 =
 
         static member midpoint (A: Bivec) (B: Bivec) =
             (A.point + B.point) / 2.0
+
+module T =
+    type Basis =
+        | Positive of int
+        | Negative of int
+        | Zero     of int
+        | Mixed    of Basis list
+        | Scalar   of int
+        with
+        member this.value =
+            match this with
+            | Positive a | Negative a | Zero a -> a
+            | Mixed _ | Scalar _ -> 0
+        static member ( * ) (a, b) =
+            match a, b with
+            | Positive a, Positive b when a = b -> Scalar  1
+            | Negative a, Negative b when a = b -> Scalar -1
+            | Zero     a, Zero     b when a = b -> Scalar  0
+
+            | Positive a, Positive b -> Mixed [ Positive a; Positive b ]
+
+            | Positive a, Zero     b
+            | Zero     b, Positive a -> Mixed [ Zero b; Positive a ]
+            | Negative a, Zero     b
+            | Zero     b, Negative a -> Mixed [ Zero b; Negative a ]
+
+            | Mixed a, Mixed b -> Mixed (a @ b)
+            | b, Mixed a 
+            | Mixed a, b -> Mixed (b :: a)
+            | _, _ -> failwith $"Unmatched: {a} :: {b}"
+        
+        override this.ToString () =
+            match this with
+            | Positive a
+            | Negative a
+            | Zero     a -> $"e{a}"
+            | Mixed    a -> $"""e{List.fold (fun acc (b: Basis) -> $"{acc}{b.value}") "" a }"""
+            | Scalar   x -> $"{x}"
+
+    [<AutoOpen>]
+    module Algebra =
+        type R(p, n, z) =
+            member this.p = p
+            member this.n = n
+            member this.z = z
+            member this.basis =
+                [ for n in 1..p -> Positive n
+                  for n in 1..n -> Negative n
+                  for n in 1..z -> Zero n ]
+        
+            override this.ToString () =
+                $"Algebra of R({this.p}, {this.n}, {this.z}) -> {List.ofSeq this.basis}"
