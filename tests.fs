@@ -1,11 +1,15 @@
+namespace FGA.Tests
+
 open Expecto
 
 open FGA
 
-let test name case expect str =
-    testCase name <| fun () ->
-        Expect.equal case expect str
-        Expect.equal $"{case}" str str
+[<AutoOpen>]
+module Tests =
+    let test name case expect str =
+        testCase name <| fun () ->
+            Expect.equal case expect str
+            Expect.equal $"{case}" str str
 
 module TestR200 =
     open R200
@@ -96,6 +100,7 @@ module TestR201 =
             ]
         ]
 
-[<EntryPoint>]
-let runTests args =
-    runTestsInAssemblyWithCLIArgs [] [||]
+module Main =
+    [<EntryPoint>]
+    let runTests args =
+        runTestsInAssemblyWithCLIArgs [] [||]
