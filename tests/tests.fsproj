@@ -4,10 +4,13 @@
     <TargetFramework>net8.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="algebra.fs" />
     <Compile Include="tests.fs" />
+    <Compile Include="main.fs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Expecto" Version="10.1.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../SharpGA.fsproj" />
   </ItemGroup>
 </Project>

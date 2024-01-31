@@ -1,4 +1,4 @@
-namespace FGA
+namespace SharpGA
 
 open System
 
@@ -86,7 +86,7 @@ module R200 =
             { e12 = 0.0 }
         static member create e12 =
             { e12 = e12 }
-        
+
         override this.ToString () =
             vecStr [ this.e12 ] (basis |> List.skip 3 |> List.take 1)
 
@@ -118,7 +118,7 @@ module R200 =
               e1  = e1
               e2  = e2
               e12 = e12 }
-        
+
         member this.list = [ this.s; this.e1; this.e2; this.e12 ]
 
         override this.ToString () =
@@ -163,7 +163,7 @@ module R201 =
         static member create x y =
             { x = x
               y = y }
-        
+
         member this.tuple = this.x, this.y
 
         override this.ToString () =
@@ -185,7 +185,7 @@ module R201 =
             { x = p.x / s
               y = p.y / s }
 
-    type Blade = 
+    type Blade =
         | Zero  of float
         | One   of Vec
         | Two   of Bivec
@@ -257,7 +257,7 @@ module R201 =
             { e1 = a.e1 + b.e1
               e2 = a.e2 + b.e2
               e0 = a.e0 + b.e0 }
-        
+
         static member ( * ) (a: Vec, s: float) =
             { e1 = a.e1 * s
               e2 = a.e2 * s
@@ -322,7 +322,7 @@ module R201 =
             { e01 = A.e01 + B.e01
               e02 = A.e02 + B.e02
               e12 = A.e12 + B.e12 }
-        
+
         static member ( * ) (A: Bivec, s: float) =
             { e01 = A.e01 * s
               e02 = A.e02 * s
@@ -371,7 +371,7 @@ module R201 =
               vec    = Vec.Default
               bivec  = Bivec.Default
               pss    = PSS.Default }
-        
+
         static member create scalar vec bivec pss =
             { scalar = scalar
               vec    = vec
@@ -420,10 +420,10 @@ module T =
             | Zero     b, Negative a -> Mixed [ Zero b; Negative a ]
 
             | Mixed a, Mixed b -> Mixed (a @ b)
-            | b, Mixed a 
+            | b, Mixed a
             | Mixed a, b -> Mixed (b :: a)
             | _, _ -> failwith $"Unmatched: {a} :: {b}"
-        
+
         override this.ToString () =
             match this with
             | Positive a
@@ -442,6 +442,6 @@ module T =
                 [ for n in 1..p -> Positive n
                   for n in 1..n -> Negative n
                   for n in 1..z -> Zero n ]
-        
+
             override this.ToString () =
                 $"Algebra of R({this.p}, {this.n}, {this.z}) -> {List.ofSeq this.basis}"

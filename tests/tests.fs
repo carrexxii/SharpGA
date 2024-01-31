@@ -1,8 +1,10 @@
-namespace FGA.Tests
+namespace SharpGA.Tests
 
 open Expecto
 
-open FGA
+open SharpGA
+
+// TODO: switch to xunit
 
 [<AutoOpen>]
 module Tests =
@@ -10,6 +12,9 @@ module Tests =
         testCase name <| fun () ->
             Expect.equal case expect str
             Expect.equal $"{case}" str str
+
+    let run () =
+        runTestsInAssemblyWithCLIArgs [] [||]
 
 module TestR200 =
     open R200
@@ -99,8 +104,3 @@ module TestR201 =
                 test $"A∨E = ({A}) ∨ ({E})" (A .&. E) (vec  0 0  0) "0"
             ]
         ]
-
-module Main =
-    [<EntryPoint>]
-    let runTests args =
-        runTestsInAssemblyWithCLIArgs [] [||]
